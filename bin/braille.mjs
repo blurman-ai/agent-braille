@@ -18,7 +18,8 @@ import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-import { AFTER_KINDS, fillValues, parseStep } from "../lib/executor.mjs";
+import { fillValues } from "../lib/session.mjs";
+import { AFTER_KINDS, parseStep } from "../lib/steps.mjs";
 import { checkBuild, syncRuntime } from "../lib/install.mjs";
 
 const EXECUTOR = new URL("../lib/executor.mjs", import.meta.url).pathname;

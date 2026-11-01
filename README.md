@@ -15,7 +15,7 @@ It has four parts:
 | In-page API | `window.__agent`: `screen`, `busy`, `find`, `act`, `layout`, `errors`, `tools`. Exists only in a build with `VITE_AGENT_API=1` | `runtime/` |
 | Markup contract | screen root `data-testid="screen.<name>"` with `data-state` (`loading`, `ready`, `empty`, `error`); buttons `data-testid="<screen>.<action>"`; hidden state `data-fact` | `runtime/screenState.ts` |
 | Markup guard | a lint rule refuses an action button without a testid; a test checks names | `frontend/` |
-| Executor | runs scenarios, or one step at a time for a model; records API answers and replays a screen with no backend | `bin/braille.mjs`, `lib/executor.mjs` |
+| Executor | runs scenarios, or one step at a time for a model; records API answers and replays a screen with no backend | `bin/braille.mjs`, `lib/` |
 
 Tested on Chromium with a Vite build. The example in `examples/react-mantine` uses React, Mantine, React Query and React Router. The runtime has no framework dependency, but other bundlers and UI libraries are not tested here: see [Limits](#limits).
 
@@ -79,6 +79,7 @@ braille selftest
 | `BRAILLE_ALLOWED_HOSTS` | extra hosts beyond localhost. Never add production |
 | `BRAILLE_API_ROOTS` | comma-separated API path prefixes to record and replay; default `/api` |
 | `BRAILLE_DISMISS_LABEL` | label of a cookie banner button to press after the first step |
+| `BRAILLE_OCCLUSION_GRACE_MS` | how long a covered button may wait for the cover to go before the step fails naming it; default 1000 |
 | `BRAILLE_FILES_DIR` | files for `upload` steps; default `scenarios/files` |
 | `BRAILLE_CREDENTIAL`, `BRAILLE_SECRET`, `BRAILLE_TOKEN_KEY` | log in with `bearer` (written to `localStorage[BRAILLE_TOKEN_KEY]`) or `cookie`. `--storage-state` is the alternative |
 

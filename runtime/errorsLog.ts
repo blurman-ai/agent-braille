@@ -44,17 +44,6 @@ export function startErrorsLog(win: Window & typeof globalThis): ErrorsLog {
     win.removeEventListener("unhandledrejection", onRejection);
   });
 
-  for (const method of ["pushState", "replaceState"] as const) {
-    const original = win.history[method];
-    win.history[method] = function (this: History, ...args: Parameters<History["pushState"]>) {
-      const result = original.apply(this, args);
-        return result;
-    };
-    disposers.push(() => {
-      win.history[method] = original;
-    });
-  }
-
   if (typeof win.fetch === "function") {
     const originalFetch = win.fetch;
     win.fetch = async (...args: Parameters<typeof fetch>) => {

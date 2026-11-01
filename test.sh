@@ -45,6 +45,9 @@ serve dist
 red "control: server refusal named" "name_rejected" $RUN $EX/scenarios/_control-api-refusal.json
 red "control: required label differs" "Current" $RUN $EX/scenarios/_control-label-required.json
 
+serve dist
+red "control: covered button, real browser, cover named" "covered" $RUN $EX/scenarios/_control-covered-button.json
+
 # Replay: the server's memory is empty and a POST would change it; green must come from the file alone.
 serve dist
 green "replay from the recording" $RUN $EX/scenarios/people-add.json --replay-api "$T/api"

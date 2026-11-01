@@ -1,0 +1,11 @@
+{
+  "name": "_control-covered-button",
+  "why": "Control: an open dialog covers the tabs under it. Clicking one must be red and name what covers it.",
+  "verifies": [],
+  "steps": [
+    {"goto": "/", "after": {"screen": "people", "shown": ["people.add"]}},
+    {"click": {"testid": "people.add", "item": "Add person"}, "after": {"shown": ["people.name"]}},
+    {"click": {"testid": "people.tab-archive"}, "after": {"shown": ["people.name"]}},
+    {"wait": "unreachable"}
+  ]
+}
