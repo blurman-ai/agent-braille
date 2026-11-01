@@ -1,0 +1,21 @@
+{
+  "name": "people-add",
+  "why": "A person added through the dialog appears in the list with every chosen value.",
+  "verifies": ["people: add a person"],
+  "steps": [
+    {"goto": "/", "after": {"screen": "people", "state": "empty", "shown": ["people.add"]}},
+    {"click": {"testid": "people.add", "item": "Add person"}, "after": {"shown": ["people.name", "people.save"]}},
+    {"disabled": {"testid": "people.save"}},
+    {"fill": {"testid": "people.name"}, "value": "Ada", "after": {"shown": ["people.save"]}},
+    {"click": {"testid": "people.role"}, "after": {"shown": ["people.save"]}},
+    {"click": {"role": "option", "name": "Engineer"}, "after": {"shown": ["people.save"]}},
+    {"click": {"testid": "people.remote"}, "after": {"shown": ["people.save"]}},
+    {"checked": {"testid": "people.remote"}},
+    {"click": {"testid": "people.level-senior"}, "after": {"shown": ["people.save"]}},
+    {"enabled": {"testid": "people.save"}},
+    {"click": {"testid": "people.save"}, "after": {"state": "ready", "shown": ["people.row"], "gone": ["people.save"]}},
+    {"fact": {"count": "1"}},
+    {"wait": "Ada, Engineer, senior, remote"},
+    {"absent": "Not saved"}
+  ]
+}

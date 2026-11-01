@@ -1,0 +1,14 @@
+{
+  "name": "people-navigation",
+  "why": "The router moves between screens and each screen reports its own name; a hidden tab's button is not the visible one.",
+  "verifies": ["people: navigation"],
+  "steps": [
+    {"goto": "/", "after": {"screen": "people", "shown": ["people.tab-archive"]}},
+    {"click": {"testid": "people.tab-archive"}, "after": {"shown": ["people.add"]}},
+    {"click": {"testid": "people.add", "item": "Add from archive"}, "after": {"shown": ["people.name"]}},
+    {"press": "Escape", "after": {"gone": ["people.name"]}},
+    {"click": {"testid": "nav.settings"}, "after": {"screen": "settings", "state": "ready", "shown": ["nav.people"]}},
+    {"wait": "Settings"},
+    {"absent": {"testid": "people.add"}}
+  ]
+}

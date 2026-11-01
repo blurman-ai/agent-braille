@@ -1,0 +1,14 @@
+{
+  "name": "_control-api-refusal",
+  "why": "Control: the server rejects the name, the dialog stays. Must be red and name the request and code.",
+  "verifies": [],
+  "steps": [
+    {"goto": "/", "after": {"screen": "people", "shown": ["people.add"]}},
+    {"click": {"testid": "people.add", "item": "Add person"}, "after": {"shown": ["people.name"]}},
+    {"fill": {"testid": "people.name"}, "value": "boom", "after": {"shown": ["people.save"]}},
+    {"click": {"testid": "people.role"}, "after": {"shown": ["people.save"]}},
+    {"click": {"role": "option", "name": "Designer"}, "after": {"shown": ["people.save"]}},
+    {"click": {"testid": "people.save"}, "after": {"gone": ["people.save"], "within": 3}},
+    {"wait": "unreachable"}
+  ]
+}

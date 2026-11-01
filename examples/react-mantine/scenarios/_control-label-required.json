@@ -1,0 +1,10 @@
+{
+  "name": "_control-label-required",
+  "why": "Control: names a label the button does not have. Must be red with both labels.",
+  "verifies": [],
+  "steps": [
+    {"goto": "/", "after": {"screen": "people", "shown": ["people.tab-active"]}},
+    {"click": {"testid": "people.tab-active", "name": "Current"}, "after": {"shown": ["people.add"]}},
+    {"wait": "People"}
+  ]
+}

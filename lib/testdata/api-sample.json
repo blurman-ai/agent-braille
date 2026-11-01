@@ -1,0 +1,64 @@
+{
+ "scenario": "api-sample",
+ "source": "local",
+ "recorded_at": "2026-10-17T10:00:00Z",
+ "calls": [
+  {
+   "method": "GET",
+   "path": "/api/users/me",
+   "query": "",
+   "body": "",
+   "status": 200,
+   "content_type": "application/json",
+   "response": {
+    "id": "u1",
+    "role": "admin"
+   }
+  },
+  {
+   "method": "GET",
+   "path": "/api/people",
+   "query": "limit=50&offset=0",
+   "body": "",
+   "status": 200,
+   "content_type": "application/json",
+   "response": {
+    "items": [],
+    "total": 0
+   }
+  },
+  {
+   "method": "POST",
+   "path": "/api/people/search",
+   "query": "",
+   "body": "{\"name\":\"a\",\"page\":1}",
+   "status": 200,
+   "content_type": "application/json",
+   "response": {
+    "items": []
+   }
+  },
+  {
+   "method": "GET",
+   "path": "/api/jobs/1",
+   "query": "",
+   "body": "",
+   "status": 200,
+   "content_type": "application/json",
+   "response": {
+    "state": "running"
+   }
+  },
+  {
+   "method": "GET",
+   "path": "/api/jobs/1",
+   "query": "",
+   "body": "",
+   "status": 200,
+   "content_type": "application/json",
+   "response": {
+    "state": "done"
+   }
+  }
+ ]
+}

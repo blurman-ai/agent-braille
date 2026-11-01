@@ -1,0 +1,13 @@
+{
+  "name": "agent-braille",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "Let coding agents read and drive a web UI through structured state instead of screenshots.",
+  "bin": { "braille": "bin/braille.mjs" },
+  "engines": { "node": ">=20.19" },
+  "scripts": { "test": "bash test.sh", "test:runtime": "vitest run --root runtime" },
+  "dependencies": { "playwright-core": "1.56.1" },
+  "devDependencies": { "eslint": "9.37.0", "jsdom": "26.1.0", "typescript": "5.9.3", "vite": "7.1.12", "vitest": "3.2.4" }
+}
