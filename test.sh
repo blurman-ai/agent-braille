@@ -49,6 +49,9 @@ serve dist
 green "navigation, hidden duplicate testid" $RUN $EX/scenarios/people-navigation.json
 serve dist
 red "control: server refusal named" "name_rejected" $RUN $EX/scenarios/_control-api-refusal.json
+started=$SECONDS
+red "control: a failed request ends the wait, named" "name_rejected" $RUN $EX/scenarios/_control-api-wait.json
+if [ $((SECONDS - started)) -lt 15 ]; then ok "control: the wait ended within 15 s"; else fail "control: the wait took $((SECONDS - started)) s"; fi
 red "control: browser missing is named" "the browser did not start" env BRAILLE_CHROME=/nonexistent $RUN $EX/scenarios/_control-label-required.json
 red "control: required label differs" "Current" $RUN $EX/scenarios/_control-label-required.json
 
@@ -76,10 +79,15 @@ green "session: start" $BR start --base "$BASE"
 $BR step '{"goto": "/"}' > s1
 if grep -q '"people.add"' s1; then ok "session: observed names the button"; else fail "observed"; cat s1; fi
 if grep -q 'GET /api/people 200' s1; then ok "session: the answer names the step's requests"; else fail "no api in the answer"; cat s1; fi
+if grep -q '"text"' s1 && grep -q 'People' s1; then ok "session: the answer holds the visible text"; else fail "no text in the answer"; cat s1; fi
 if grep -q '"after"' s1; then ok "session: after taken from what was seen"; else fail "after not recorded"; fi
 red "session: no such button" "people.nope" $BR step '{"click": {"testid": "people.nope"}, "after": {"state": "ready"}}'
-red "session: after a failed action only goto" "goto" $BR step '{"click": {"testid": "people.add", "item": "Add person"}}'
+green "session: a click that did not land keeps the session" $BR step '{"click": {"testid": "people.add", "item": "Add person"}}'
+red "session: after that did not come true, only goto" "goto" sh -c "$BR step '{\"press\": \"Escape\", \"after\": {\"shown\": [\"people.nope\"], \"within\": 1}}'; $BR step '{\"press\": \"Escape\"}'"
 green "session: goto lifts it" $BR step '{"goto": "/"}'
+$BR step '{"goto": "/"}' >/dev/null; $BR step '{"click": {"testid": "people.add", "item": "Add person"}}' >/dev/null; $BR step '{"fill": {"label": "Name"}, "value": "boom"}' >/dev/null; $BR step '{"click": {"testid": "people.role"}}' >/dev/null; $BR step '{"click": {"role": "option", "name": "Designer"}}' >/dev/null
+$BR step '{"click": {"testid": "people.save"}}' > s2
+if grep -q '"notices"' s2 && grep -q 'Not saved' s2; then ok "session: an alert is in notices"; else fail "no notices"; cat s2; fi
 green "session: close" $BR close
 cd "$ROOT"
 echo; if [ "$FAILS" = 0 ]; then echo "ALL GREEN"; else echo "RED: $FAILS"; fi

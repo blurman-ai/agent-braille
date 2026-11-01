@@ -12,14 +12,16 @@ Optional: `"onboarding": true` keeps tours and hints on.
 
 1. `braille start --base http://localhost:5173` against a build with `VITE_AGENT_API=1`.
 2. First step: `braille step '{"goto": "/path"}'`.
-3. `ok: true`: the step is recorded and `observed` holds what is visible now. `ok: false`: not recorded, `error` says why. After a failed action only `goto` is accepted.
+3. `ok: true`: the step is recorded and `observed` holds what is visible now. `ok: false`: not recorded, `error` says why. When an action happened and its `after` did not come true, only `goto` is accepted.
 4. Choose the next step **only from the last `observed`**. A testid that is not there does not exist.
 5. `braille look` shows the screen without a step. `braille close` writes the steps to `steps.json` in the session directory; copy them into `steps` as they are.
 6. `braille check <dir>` gives no problems, `braille run <file> --base …` is green.
 
 `api` in the answer lists the API requests of this step with their status; empty means the step made none. Read it instead of logs.
 
-`observed`: `screen` (name, state), `elements` (visible, with testid), `fields` (inputs by label), `labels` (buttons without a testid), `options` (open list items), `headings`, `overlays`, `facts`.
+`notices` in the answer holds toasts and alerts that appeared in the step, even if gone. A step's `observed` lists only what changed; `unchanged` counts the rest, `braille look` shows everything.
+
+`observed`: `screen` (name, state), `text` (visible text), `elements` (visible, with testid), `fields` (inputs by label), `labels` (buttons without a testid), `options` (open list items), `headings`, `overlays`, `facts`.
 
 ## Steps
 

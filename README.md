@@ -56,7 +56,7 @@ Written for the agent doing the work. Each step ends with a check; if it fails, 
 7. **Turn on the guard.** Copy `frontend/testidScope.js` and `eslint-testid-block.js`, list your button components in `testidBlock([...])`. Copy `frontend/testids.test.js`; its control cases must fail on a button without a testid. Add directories as you mark them up.
 8. **Switch off tours and hints.** They call `agentTurnedOff("onboarding")` from `runtime/switches.ts`; the executor sets that key itself, so they do not pop up over steps.
 9. **Write the first scenario step by step** as in [docs/SCENARIOS.md](docs/SCENARIOS.md), record the API, replay it with the backend stopped. Break one expectation and confirm that it goes red with a clear reason.
-10. **Tell your agents.** Add to `AGENTS.md`: read screens through `window.__agent` and `braille step`, follow `docs/SCENARIOS.md`, use a screenshot only for questions about appearance.
+10. **Tell your agents.** Add to `AGENTS.md`: read screens through `window.__agent` and `braille step` (`braille help` is the short manual), write scenarios by `docs/SCENARIOS.md`, use a screenshot only for questions about appearance.
 
 Done when every page has a root with `data-state`, lint covers every screen with buttons, and each screen with meaningful behaviour has a green scenario plus a control that can go red.
 
@@ -81,6 +81,7 @@ braille selftest
 | `BRAILLE_ALLOWED_HOSTS` | extra hosts beyond localhost. Never add production |
 | `BRAILLE_API_ROOTS` | comma-separated API path prefixes to record and replay; default `/api` |
 | `BRAILLE_DISMISS_LABEL` | label of a cookie banner button to press after the first step |
+| `BRAILLE_API_FAIL_GRACE_MS` | how long a wait goes on after a request of the step failed and the page stopped working; default 5000 |
 | `BRAILLE_OCCLUSION_GRACE_MS` | how long a covered button may wait for the cover to go before the step fails naming it; default 1000 |
 | `BRAILLE_FILES_DIR` | files for `upload` steps; default `scenarios/files` |
 | `BRAILLE_CREDENTIAL`, `BRAILLE_SECRET`, `BRAILLE_TOKEN_KEY` | log in with `bearer` (written to `localStorage[BRAILLE_TOKEN_KEY]`) or `cookie`. `--storage-state` is the alternative |

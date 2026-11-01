@@ -201,6 +201,10 @@ function selftest() {
 async function main() {
   const [command, ...argv] = process.argv.slice(2);
   const options = parseOptions(argv);
+  if (command === "help") {
+    process.stdout.write(fs.readFileSync(new URL("../docs/STEPS.md", import.meta.url), "utf8"));
+    return 0;
+  }
   if (command === "selftest") return selftest();
   if (command === "install" && options.rest[0]) {
     const problems = syncRuntime(options.rest[0], { install: true });
