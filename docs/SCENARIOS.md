@@ -17,6 +17,8 @@ Optional: `"onboarding": true` keeps tours and hints on.
 5. `braille look` shows the screen without a step. `braille close` writes the steps to `steps.json` in the session directory; copy them into `steps` as they are.
 6. `braille check <dir>` gives no problems, `braille run <file> --base …` is green.
 
+`api` in the answer lists the API requests of this step with their status; empty means the step made none. Read it instead of logs.
+
 `observed`: `screen` (name, state), `elements` (visible, with testid), `fields` (inputs by label), `labels` (buttons without a testid), `options` (open list items), `headings`, `overlays`, `facts`.
 
 ## Steps
