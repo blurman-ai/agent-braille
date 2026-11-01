@@ -55,6 +55,7 @@ Text values may use `{name}` substitutions from `--values` or a recording.
 - **`after` is required on `goto`, `click`, `fill`, `press`, `upload`:** what becomes observable. Fields: `screen`, `state`, `shown`, `gone`, `within` (seconds, default 20). In a session you may send a step without it: the executor records what it saw in `recorded.after`. Compare that with the requirement; if it is wrong, the scenario or the screen is wrong.
 - **`name` on a testid target only for a label the requirement quotes.** Otherwise a harmless copy change breaks the scenario.
 - `item` is data (a row, an answer), not interface text.
+- **Each source answers its own question.** `state` and `busy` say the app has finished; only what is visible proves the result. A scenario needs at least one check of what is visible (`after.shown`, `after.gone`, a check step): `fact`, `state` and `requested` alone are refused.
 - `"optional": true` for what appears only sometimes.
 - After every action the executor waits for `window.__agent.busy()` to be empty. No pauses needed.
 

@@ -52,7 +52,13 @@ export function scenarioProblems(scenario, fileName, { strict = true } = {}) {
     }
   });
   if (!scenario.steps.some((raw) => EXPECT_KINDS.some((kind) => kind in raw))) problems.push("no expectation: the scenario checks nothing");
+  else if (!fileName?.startsWith("_") && !hasDirectEvidence(scenario.steps)) problems.push("no direct evidence: fact and state are the app's own report; check what is visible with after.shown, after.gone or a check step");
   return problems;
+}
+
+/** A check of what is visible. `fact` and `state` are the app's own report, `requested` is the network: they do not prove the result. */
+function hasDirectEvidence(steps) {
+  return steps.some((raw) => raw.after?.shown?.length || raw.after?.gone?.length || (Array.isArray(raw.repeat) && hasDirectEvidence(raw.repeat)) || EXPECT_KINDS.some((kind) => kind !== "fact" && kind !== "requested" && kind in raw));
 }
 
 function check(dir) {
@@ -173,6 +179,7 @@ function selftest() {
   const good = { name: "a", why: "b", verifies: ["c"], steps: [{ goto: "/", after: { state: "ready" } }, { wait: "x" }] };
   const cases = [
     ["clean scenario", scenarioProblems(good, "a.json"), null],
+    ["only the app's own report", scenarioProblems({ ...good, steps: [{ goto: "/", after: { state: "ready" } }, { fact: { count: "1" } }] }, "a.json"), "no direct evidence"],
     ["action without after", scenarioProblems({ ...good, steps: [{ goto: "/" }, { wait: "x" }] }, "a.json"), "needs after"],
     ["fixed pause", scenarioProblems({ ...good, steps: [{ goto: "/", after: { state: "ready" } }, { wait: 2000 }] }, "a.json"), "fixed pause"],
     ["click by label", scenarioProblems({ ...good, steps: [{ click: "Save", after: { state: "ready" } }, { wait: "x" }] }, "a.json"), "click by label"],
