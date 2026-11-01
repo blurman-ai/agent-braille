@@ -1,12 +1,14 @@
 # agent-braille
 
-Coding agents waste tokens looking at screenshots of a UI and guessing. agent-braille lets them read and drive a web UI through structured answers instead: which screen is open, whether it finished loading, which buttons exist, which are disabled or covered, and what just failed.
+When an agent has only indirect evidence about a UI, it guesses, and a wrong guess costs far more tokens than any screenshot: it reads code, reruns and fixes what is not broken. agent-braille gives the agent direct evidence through structured answers: which screen is open, whether it finished loading, which buttons exist, which are disabled or covered, and what just failed.
 
 ```json
 {"screen": {"name": "people", "state": "empty"},
  "elements": [{"testid": "people.add", "role": "button", "name": "Add person"}],
  "fields": [], "options": [], "overlays": [], "facts": {"count": "0"}}
 ```
+
+Each source answers its own question. `state` and `busy` say the app has finished. What is visible proves the result, so a scenario needs at least one check of it; `fact` and `state` alone are refused, because they are the app's own report. A failed step names the cause: what covers a button, and which API requests the step made, or that it made none.
 
 It has four parts:
 
@@ -21,7 +23,7 @@ Tested on Chromium with a Vite build. The example in `examples/react-mantine` us
 
 ## What it saves
 
-On the example's 14-step `people-add` scenario the agent reads a 2.9 KB `report.json`. The same run with a 1440×1000 screenshot after every step is 14 images, about 27,000 input tokens at Claude's published estimate of width×height/750 per image. That compares what the agent has to read; total session cost depends on your workflow and was not measured. With a recorded API the scenario also runs with no backend or live model.
+On the example's 14-step `people-add` scenario the agent reads a 2.9 KB `report.json`. The same run with a 1440×1000 screenshot after every step is 14 images, about 27,000 input tokens at Claude's published estimate of width×height/750 per image. That compares what the agent has to read; total session cost depends on your workflow and was not measured. With a recorded API the scenario also runs with no backend or live model. This compares one observation with screenshots only. It was not measured against accessibility snapshots such as Playwright CLI, or over a whole agent session.
 
 ## Try it
 

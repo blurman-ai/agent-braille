@@ -53,7 +53,7 @@ red "control: browser missing is named" "the browser did not start" env BRAILLE_
 red "control: required label differs" "Current" $RUN $EX/scenarios/_control-label-required.json
 
 serve dist
-red "control: covered button, real browser, cover named" "is covered: " $RUN $EX/scenarios/_control-covered-button.json
+red "control: covered button, real browser, cover named" "is covered: .*open dialog: \"New person\"" $RUN $EX/scenarios/_control-covered-button.json
 
 # Replay: the server's memory is empty and a POST would change it; green must come from the file alone.
 serve dist
