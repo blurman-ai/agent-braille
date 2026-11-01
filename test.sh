@@ -10,10 +10,16 @@ stop() { if [ -n "$SERVER" ]; then kill "$SERVER" 2>/dev/null; wait "$SERVER" 2>
 serve() { stop; (cd "$EX" && exec node server.mjs "$PORT" "$1") & SERVER=$!; sleep 0.5; }
 trap stop EXIT
 green() { if "${@:2}" >"$T/o" 2>&1; then ok "$1"; else fail "$1"; cat "$T/o"; fi; }
-red()   { # red <title> <required text> <command…>
+red()   { # red <title> <required text> <command…>; the text must come from the failure, not from the scenario's name or steps
   local title=$1 wanted=$2; shift 2
-  if "$@" >"$T/o" 2>&1; then fail "$title: went green"; cat "$T/o"
-  elif grep -rq "$wanted" "$T/o" "$T/runs" 2>/dev/null; then ok "$title"; else fail "$title: no «$wanted»"; cat "$T/o"; fi; }
+  rm -rf "$T/runs"
+  if "$@" >"$T/o" 2>&1; then fail "$title: went green"; cat "$T/o"; return; fi
+  sed -E 's/^RED +[^ ]+//; s/ :: [^ ]*$//' "$T/o" > "$T/why"
+  find "$T/runs" -name report.json -exec cat {} + >> "$T/why" 2>/dev/null
+  if grep -q -- "$wanted" "$T/why"; then ok "$title"; else fail "$title: no «$wanted»"; cat "$T/o"; fi; }
+
+browser_starts() { node --input-type=module -e 'import { chromium } from "playwright-core"; import { chromeOption } from "./lib/browser.mjs"; const b = await chromium.launch({ ...chromeOption(process.env), args: ["--no-sandbox"] }); await b.close();' >/dev/null 2>&1; }
+if ! browser_starts; then echo "No browser: run npx playwright-core install chromium, or set BRAILLE_CHROME=/path/to/chrome"; exit 2; fi
 
 green "executor and CLI control cases" $BR selftest
 green "runtime tests" npx vitest run
@@ -43,10 +49,11 @@ serve dist
 green "navigation, hidden duplicate testid" $RUN $EX/scenarios/people-navigation.json
 serve dist
 red "control: server refusal named" "name_rejected" $RUN $EX/scenarios/_control-api-refusal.json
+red "control: browser missing is named" "the browser did not start" env BRAILLE_CHROME=/nonexistent $RUN $EX/scenarios/_control-label-required.json
 red "control: required label differs" "Current" $RUN $EX/scenarios/_control-label-required.json
 
 serve dist
-red "control: covered button, real browser, cover named" "covered" $RUN $EX/scenarios/_control-covered-button.json
+red "control: covered button, real browser, cover named" "is covered: " $RUN $EX/scenarios/_control-covered-button.json
 
 # Replay: the server's memory is empty and a POST would change it; green must come from the file alone.
 serve dist
