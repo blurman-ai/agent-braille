@@ -75,6 +75,7 @@ cd "$T"
 green "session: start" $BR start --base "$BASE"
 $BR step '{"goto": "/"}' > s1
 if grep -q '"people.add"' s1; then ok "session: observed names the button"; else fail "observed"; cat s1; fi
+if grep -q 'GET /api/people 200' s1; then ok "session: the answer names the step's requests"; else fail "no api in the answer"; cat s1; fi
 if grep -q '"after"' s1; then ok "session: after taken from what was seen"; else fail "after not recorded"; fi
 red "session: no such button" "people.nope" $BR step '{"click": {"testid": "people.nope"}, "after": {"state": "ready"}}'
 red "session: after a failed action only goto" "goto" $BR step '{"click": {"testid": "people.add", "item": "Add person"}}'
