@@ -1,6 +1,8 @@
 # agent-braille
 
-When an agent has only indirect evidence about a UI, it guesses, and a wrong guess costs far more tokens than any screenshot: it reads code, reruns and fixes what is not broken. agent-braille gives the agent direct evidence through structured answers: which screen is open, whether it finished loading, which buttons exist, which are disabled or covered, and what just failed.
+A browser tool can only report what is visible from outside: the page, the network, the console. Why a button is disabled, why a row was dropped, why a save is sitting in a queue is known only to the frontend's code. Without it an agent guesses, and a wrong guess costs far more tokens than any screenshot: it reads code, reruns and fixes what is not broken.
+
+agent-braille is about putting that knowledge into the code. The agent adds small inserts where the code decides (`data-state`, `data-fact`, busy sources), scenarios check them, and the next agent gets a direct answer:
 
 ```json
 {"screen": {"name": "people", "state": "empty"},
@@ -9,6 +11,34 @@ When an agent has only indirect evidence about a UI, it guesses, and a wrong gue
 ```
 
 Each source answers its own question. `state` and `busy` say the app has finished. What is visible proves the result, so a scenario needs at least one check of it; `fact` and `state` alone are refused, because they are the app's own report. A failed step names the cause: what covers a button, and which API requests the step made, or that it made none.
+
+## What the inserts give
+
+Seeded defects on the example app, a neutral task ("add a person, she appears in the list"), three sessions per defect, Sonnet:
+
+| Defects | Sessions | Playwright CLI | Playwright CLI + inserts | agent-braille |
+|---|---|---|---|---|
+| Known only to the code: hidden validation rule, rows dropped on the client, a queue waiting on a socket, a client throttle, a changed response format, demo mode | 18 | 3 right | 15 right | 15 right |
+| Visible from outside, but not in the accessibility tree or status codes: same colour as the background, transparent, covered, off-screen, a short toast, a 200 that says it failed | 30 | 1 right | 3 right | 22 right |
+
+Most of the gain in the first row comes from the inserts, not from the tool: plain Playwright reads them as well. No session raised a false alarm on the 5 working controls of the second row. A delayed autosave, declared as a busy source, was judged correctly 3 of 3 times, against 1 of 3 and 2 of 3.
+
+These defects were chosen to expose what a browser tool cannot see, so this is not a bug-finding rate. On ordinary failures, a failed request or a covered button, Playwright CLI found the cause just as often in our runs on a real application, at about 20% lower cost.
+
+**What to insert.** When a step does not explain why something did not happen, add a fact where the code decides, and let a scenario check it. Name the consequence, not the internal mode: `saved-to=local-only` works, `mode=demo` was ignored in all 9 sessions.
+
+```tsx
+<span {...screenFactProps("blocked-by", name.length > 10 ? "name-longer-than-10" : "none")} />
+```
+
+What the tool adds on top:
+
+- **A diagnosis instead of a wait.** A failed request ends the wait within seconds and names it: `API: POST /x -> 502`, where a plain wait reports a 60 s timeout.
+- **Contradictions.** The app's report is compared with the network on every step: `ready` while a request failed, `loading` with nothing busy, a 200 whose body says it failed, the same POST sent twice, a poll that stands still. The inserts can drift from reality, so they do not get the last word.
+- **A check of the check.** `braille mutate` breaks each recorded request in turn. A scenario still green did not depend on it.
+- **What a person cannot see,** though the tree has it: `visual` in the answer.
+- **Toasts.** Alerts that appeared in a step are kept in `notices` after they vanish.
+- **Replay by server state,** with no backend, and a red step for any request not in the file.
 
 It has four parts:
 
@@ -56,7 +86,7 @@ Written for the agent doing the work. Each step ends with a check; if it fails, 
 7. **Turn on the guard.** Copy `frontend/testidScope.js` and `eslint-testid-block.js`, list your button components in `testidBlock([...])`. Copy `frontend/testids.test.js`; its control cases must fail on a button without a testid. Add directories as you mark them up.
 8. **Switch off tours and hints.** They call `agentTurnedOff("onboarding")` from `runtime/switches.ts`; the executor sets that key itself, so they do not pop up over steps.
 9. **Write the first scenario step by step** as in [docs/SCENARIOS.md](docs/SCENARIOS.md), record the API, replay it with the backend stopped. Break one expectation and confirm that it goes red with a clear reason.
-10. **Tell your agents.** Add to `AGENTS.md`: read screens through `window.__agent` and `braille step`, follow `docs/SCENARIOS.md`, use a screenshot only for questions about appearance.
+10. **Tell your agents.** Add to `AGENTS.md`: read screens through `window.__agent` and `braille step` (`braille help` is the short manual), write scenarios by `docs/SCENARIOS.md`, use a screenshot only for questions about appearance.
 
 Done when every page has a root with `data-state`, lint covers every screen with buttons, and each screen with meaningful behaviour has a green scenario plus a control that can go red.
 
@@ -68,6 +98,8 @@ If the application calls an LLM on a scenario's path, see [docs/RECORDINGS.md](d
 braille check <dir>                     validate all scenarios, no browser
 braille run <file>… --base URL          run scenarios: --out DIR, --storage-state FILE, --values FILE,
                                         --record-api DIR, --replay-api DIR, --loose
+braille mutate <file> --base URL --replay-api DIR [--strict]
+                                        break each recorded request in turn: is the scenario a real check?
 braille start --base URL                open a step session for a model
 braille step '<json>' | look | close    drive it
 braille install | check-runtime <frontend>
@@ -81,6 +113,7 @@ braille selftest
 | `BRAILLE_ALLOWED_HOSTS` | extra hosts beyond localhost. Never add production |
 | `BRAILLE_API_ROOTS` | comma-separated API path prefixes to record and replay; default `/api` |
 | `BRAILLE_DISMISS_LABEL` | label of a cookie banner button to press after the first step |
+| `BRAILLE_API_FAIL_GRACE_MS` | how long a wait goes on after a request failed and the network went quiet; default 5000 |
 | `BRAILLE_OCCLUSION_GRACE_MS` | how long a covered button may wait for the cover to go before the step fails naming it; default 1000 |
 | `BRAILLE_FILES_DIR` | files for `upload` steps; default `scenarios/files` |
 | `BRAILLE_CREDENTIAL`, `BRAILLE_SECRET`, `BRAILLE_TOKEN_KEY` | log in with `bearer` (written to `localStorage[BRAILLE_TOKEN_KEY]`) or `cookie`. `--storage-state` is the alternative |

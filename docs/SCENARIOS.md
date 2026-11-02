@@ -12,14 +12,16 @@ Optional: `"onboarding": true` keeps tours and hints on.
 
 1. `braille start --base http://localhost:5173` against a build with `VITE_AGENT_API=1`.
 2. First step: `braille step '{"goto": "/path"}'`.
-3. `ok: true`: the step is recorded and `observed` holds what is visible now. `ok: false`: not recorded, `error` says why. After a failed action only `goto` is accepted.
+3. `ok: true`: the step is recorded and `observed` holds what is visible now. `ok: false`: not recorded, `error` says why. When an action happened and its `after` did not come true, only `goto` is accepted.
 4. Choose the next step **only from the last `observed`**. A testid that is not there does not exist.
 5. `braille look` shows the screen without a step. `braille close` writes the steps to `steps.json` in the session directory; copy them into `steps` as they are.
 6. `braille check <dir>` gives no problems, `braille run <file> --base …` is green.
 
 `api` in the answer lists the API requests of this step with their status; empty means the step made none. Read it instead of logs.
 
-`observed`: `screen` (name, state), `elements` (visible, with testid), `fields` (inputs by label), `labels` (buttons without a testid), `options` (open list items), `headings`, `overlays`, `facts`.
+`notices` in the answer holds toasts and alerts that appeared in the step, even if gone. A step's `observed` lists only what changed; `unchanged` counts the rest, `braille look` shows everything.
+
+`observed`: `screen` (name, state), `text` (visible text), `elements` (visible, with testid), `fields` (inputs by label), `labels` (buttons without a testid), `options` (open list items), `headings`, `overlays`, `facts`.
 
 ## Steps
 
@@ -60,6 +62,14 @@ Text values may use `{name}` substitutions from `--values` or a recording.
 - **Each source answers its own question.** `state` and `busy` say the app has finished; only what is visible proves the result. A scenario needs at least one check of what is visible (`after.shown`, `after.gone`, a check step): `fact`, `state` and `requested` alone are refused.
 - `"optional": true` for what appears only sometimes.
 - After every action the executor waits for `window.__agent.busy()` to be empty. No pauses needed.
+
+## Is the scenario a real check
+
+`braille mutate s.json --base URL --replay-api api/` breaks each recorded request in turn (a 500; lists come back empty). `NOT CAUGHT` means the scenario stays green without that request: either it does not matter to this path, or a check is missing. `--strict` fails on any.
+
+## When the screen does not say why
+
+Add a fact in the frontend where the code decides, then check it next to what is visible: `{"disabled": {"testid": "people.save"}}` and `{"fact": {"blocked-by": "name-longer-than-10"}}`. A fact explains a result; what is visible proves it.
 
 ## Forbidden
 

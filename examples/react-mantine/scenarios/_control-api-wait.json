@@ -1,0 +1,72 @@
+{
+  "name": "_control-api-wait",
+  "why": "Control: the request fails and the expected change never comes. Must end in seconds and name the request.",
+  "verifies": [],
+  "steps": [
+    {
+      "goto": "/",
+      "after": {
+        "screen": "people",
+        "shown": [
+          "people.add"
+        ]
+      }
+    },
+    {
+      "click": {
+        "testid": "people.add",
+        "item": "Add person"
+      },
+      "after": {
+        "shown": [
+          "people.name"
+        ]
+      }
+    },
+    {
+      "fill": {
+        "testid": "people.name"
+      },
+      "value": "boom",
+      "after": {
+        "shown": [
+          "people.save"
+        ]
+      }
+    },
+    {
+      "click": {
+        "testid": "people.role"
+      },
+      "after": {
+        "shown": [
+          "people.save"
+        ]
+      }
+    },
+    {
+      "click": {
+        "role": "option",
+        "name": "Designer"
+      },
+      "after": {
+        "shown": [
+          "people.save"
+        ]
+      }
+    },
+    {
+      "click": {
+        "testid": "people.save"
+      },
+      "after": {
+        "gone": [
+          "people.save"
+        ]
+      }
+    },
+    {
+      "wait": "unreachable"
+    }
+  ]
+}
