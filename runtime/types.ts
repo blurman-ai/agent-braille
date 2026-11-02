@@ -109,6 +109,8 @@ export type AgentApi = {
   screen: () => ScreenInfo | null;
   /** Unfinished items of the page per source; an empty object means at rest. */
   busy: () => Record<string, number>;
+  /** Snapshots of the page's data layer per source (`registerDataSource`); empty when nothing is registered. */
+  data?: () => Record<string, unknown>;
   find: (query: ElementQuery) => ElementInfo[];
   layout: (a: string, b: string) => LayoutInfo | null;
   errors: (options?: { clear?: boolean }) => CapturedError[];
@@ -118,7 +120,7 @@ export type AgentApi = {
 
 /** A tool in the form of the W3C WebMCP draft. */
 export type AgentToolDescriptor = {
-  name: keyof Omit<AgentApi, "tools">;
+  name: keyof Omit<AgentApi, "tools" | "data">;
   description: string;
   inputSchema: Record<string, unknown>;
 };

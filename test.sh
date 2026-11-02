@@ -78,6 +78,17 @@ r=json.load(open('$T/api/people-add.json'));r['scenario']='weak';json.dump(r,ope
 serve dist
 if $BR mutate "$T/weak.json" --base "$BASE" --replay-api "$T/weak-dir" --out "$T/mutate2" --strict > "$T/m2" 2>&1; then fail "mutate: a weak scenario passed strict"; cat "$T/m2"; elif grep -q 'NOT CAUGHT 500 POST /api/people' "$T/m2"; then ok "control: mutate reports a scenario that never saves"; else fail "control: mutate"; cat "$T/m2"; fi
 
+# The data layer: a refusal the page tells about is not a sensor finding; the same refusal with the alert gone is.
+serve dist
+$RUN $EX/scenarios/_control-api-refusal.json --sensors > "$T/o" 2>&1
+if grep -q "said nothing" "$T/o" $(find "$T/runs" -name report.json 2>/dev/null); then fail "sensors: a told refusal reported as silent"; cat "$T/o"; else ok "sensors: a told refusal is not a finding"; fi
+green "sensors: people-add stays green" $RUN $EX/scenarios/people-add.json --sensors
+rm -rf $EX/dist-silent; cp -r $EX/dist $EX/dist-silent
+sed -i 's/role:"alert"/role:"note"/g' $EX/dist-silent/assets/*.js
+if grep -q 'role:"note"' $EX/dist-silent/assets/*.js; then ok "alert really removed"; else fail "alert not removed"; fi
+serve dist-silent
+red "control: sensors name a silent refused save" "POST /api/people -> 422) and the page said nothing" $RUN $EX/scenarios/_control-api-refusal.json --sensors
+
 # A renamed label the requirement does not quote stays green.
 rm -f $EX/dist-renamed/assets/* 2>/dev/null
 mkdir -p $EX/dist-renamed; cp -r $EX/dist/. $EX/dist-renamed/

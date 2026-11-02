@@ -5,7 +5,7 @@ import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, createBrowserRouter } from "react-router-dom";
 
-import { registerBusySource } from "./shared/agent/busy";
+import { registerBusySource, registerDataSource } from "./shared/agent/busy";
 import { queryScreenState, screenFactProps, screenRootProps } from "./shared/agent/screenState";
 
 export const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -20,7 +20,7 @@ function AddPerson({ opened, onClose }: { opened: boolean; onClose: () => void }
   const save = useMutation({
     mutationFn: async () => {
       const answer = await fetch("/api/people", { method: "POST", body: JSON.stringify({ name, role, remote, level }) });
-      if (!answer.ok) throw new Error(String(answer.status));
+      if (!answer.ok) throw new Error(`POST /api/people -> ${answer.status}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["people"] });
@@ -52,7 +52,7 @@ function PeopleScreen() {
     queryKey: ["people"],
     queryFn: async (): Promise<Person[]> => {
       const answer = await fetch("/api/people");
-      if (!answer.ok) throw new Error(String(answer.status));
+      if (!answer.ok) throw new Error(`GET /api/people -> ${answer.status}`);
       return (await answer.json()).items;
     },
   });
@@ -102,3 +102,20 @@ export const router = createBrowserRouter([
 registerBusySource("queries", () => queryClient.getQueryCache().findAll({ fetchStatus: "fetching", predicate: (query) => query.state.data === undefined }).length);
 registerBusySource("mutations", () => queryClient.isMutating());
 registerBusySource("navigation", () => (router.state.navigation.state === "idle" ? 0 : 1));
+// The data layer: which requests a screen shows and how they ended, how saves ended. The executor checks it under --sensors.
+registerDataSource("queries", () =>
+  queryClient.getQueryCache().getAll().map((query) => ({
+    key: JSON.stringify(query.queryKey),
+    status: query.state.status,
+    observers: query.getObserversCount(),
+    updatedAt: query.state.dataUpdatedAt,
+    ...(query.state.error ? { error: String((query.state.error as Error).message) } : {}),
+  })),
+);
+registerDataSource("mutations", () =>
+  queryClient.getMutationCache().getAll().map((mutation) => ({
+    status: mutation.state.status,
+    submittedAt: mutation.state.submittedAt,
+    ...(mutation.state.error ? { error: String((mutation.state.error as Error).message) } : {}),
+  })),
+);
