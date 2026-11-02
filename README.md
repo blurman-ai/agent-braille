@@ -35,6 +35,8 @@ What the tool adds on top:
 
 - **A diagnosis instead of a wait.** A failed request ends the wait within seconds and names it: `API: POST /x -> 502`, where a plain wait reports a 60 s timeout.
 - **Contradictions.** The app's report is compared with the network on every step: `ready` while a request failed, `loading` with nothing busy, a 200 whose body says it failed, the same POST sent twice, a poll that stands still. The inserts can drift from reality, so they do not get the last word.
+- **The data layer as a sensor** (`--sensors`). The request client reports what it knows through `registerDataSource`: which requests a screen shows and how they ended, how each save ended. A step goes red when a request the screen shows failed while the screen says `ready` or `empty`, or a save failed and the page said nothing (no `role=alert` or `role=status`). From outside, a silent refusal and a told one look the same: the dialog stays open.
+- **A wait that knows the data came.** The screen says `ready` or `empty`, nothing is busy or in flight, the network has been quiet 5 s: the wait ends and names what the page got (`the page got: /api/people {items: [0]}`) and what is shown instead of the awaited text. A step with its own `within` waits its time.
 - **A check of the check.** `braille mutate` breaks each recorded request in turn. A scenario still green did not depend on it.
 - **What a person cannot see,** though the tree has it: `visual` in the answer.
 - **Toasts.** Alerts that appeared in a step are kept in `notices` after they vanish.
@@ -81,6 +83,13 @@ Written for the agent doing the work. Each step ends with a check; if it fails, 
    registerBusySource("navigation", () => (router.state.navigation.state === "idle" ? 0 : 1));
    ```
    Leave out background refetches over loaded data, or a polling page never settles.
+
+   Then hand over the data layer, so `--sensors` can compare it with the screen (the example's `App.tsx` has the React Query version):
+   ```ts
+   registerDataSource("queries", () => queryClient.getQueryCache().getAll().map((q) => ({ key: JSON.stringify(q.queryKey), status: q.state.status, observers: q.getObserversCount(), updatedAt: q.state.dataUpdatedAt, ...(q.state.error ? { error: String(q.state.error.message) } : {}) })));
+   registerDataSource("mutations", () => queryClient.getMutationCache().getAll().map((m) => ({ status: m.state.status, submittedAt: m.state.submittedAt, ...(m.state.error ? { error: String(m.state.error.message) } : {}) })));
+   ```
+   Saves that bypass React Query go to a `writes` source from the HTTP client: `{ call: "POST /api/x", status, at, code }` per non-GET call, `status: null` when there was no answer. A refusal the screen handles on purpose is marked `handled: true` on its query.
 5. **Mark up screens.** On the root of each page: `{...screenRootProps("people", queryScreenState(query))}`. The root exists from the first frame and takes its state from the main request, never a timer. Start with one screen. Pages without a root are reported as `NO ROOT` in the run output.
 6. **Add testids to action buttons:** `<screen>.<action>`. Repeated elements share one id and a step picks the instance with `item`.
 7. **Turn on the guard.** Copy `frontend/testidScope.js` and `eslint-testid-block.js`, list your button components in `testidBlock([...])`. Copy `frontend/testids.test.js`; its control cases must fail on a button without a testid. Add directories as you mark them up.
@@ -97,7 +106,7 @@ If the application calls an LLM on a scenario's path, see [docs/RECORDINGS.md](d
 ```
 braille check <dir>                     validate all scenarios, no browser
 braille run <file>… --base URL          run scenarios: --out DIR, --storage-state FILE, --values FILE,
-                                        --record-api DIR, --replay-api DIR, --loose
+                                        --record-api DIR, --replay-api DIR, --sensors, --loose
 braille mutate <file> --base URL --replay-api DIR [--strict]
                                         break each recorded request in turn: is the scenario a real check?
 braille start --base URL                open a step session for a model
@@ -114,6 +123,7 @@ braille selftest
 | `BRAILLE_API_ROOTS` | comma-separated API path prefixes to record and replay; default `/api` |
 | `BRAILLE_DISMISS_LABEL` | label of a cookie banner button to press after the first step |
 | `BRAILLE_API_FAIL_GRACE_MS` | how long a wait goes on after a request failed and the network went quiet; default 5000 |
+| `BRAILLE_SETTLED_GIVEUP_MS` | how long a ready, idle and quiet screen is waited on before a wait ends without a failure; default 5000 |
 | `BRAILLE_OCCLUSION_GRACE_MS` | how long a covered button may wait for the cover to go before the step fails naming it; default 1000 |
 | `BRAILLE_FILES_DIR` | files for `upload` steps; default `scenarios/files` |
 | `BRAILLE_CREDENTIAL`, `BRAILLE_SECRET`, `BRAILLE_TOKEN_KEY` | log in with `bearer` (written to `localStorage[BRAILLE_TOKEN_KEY]`) or `cookie`. `--storage-state` is the alternative |
@@ -124,7 +134,7 @@ braille selftest
 
 - **Portals.** Toasts, dialogs and lists render outside the screen root. `screen()` includes them; check your library's.
 - **Hidden inputs.** Chips and custom checkboxes hide the `<input>` at zero size. Geometry falls back to its `<label>`. Check on your own components.
-- **A screen that swallows errors.** The server returned 5xx, the UI showed an empty form, the scenario passed. A recording with a 5xx is refused for that reason, and `errors()` keeps the code.
+- **A screen that swallows errors.** The server returned 5xx, the UI showed an empty form, the scenario passed. A recording with a 5xx is refused for that reason, `errors()` keeps the code, and `--sensors` fails the step.
 - **Recording.** The executor waits for the network to go quiet, and freezes the browser clock so dated queries match. Other random data has to be fixed by the application.
 - **Secrets.** Fields named like `password`, `token`, `secret`, `cookie`, `api_key` are masked in the query, the request body and the response. That list is a name match: read a recording before committing it, and record only with test data.
 - **Mass re-recording.** Many re-recordings per change mean a recording key depends on something irrelevant. Fix the key.
@@ -137,6 +147,7 @@ braille selftest
 - Chromium only, one window size (1440×1000).
 - Only Vite is tested. The runtime is plain DOM code, but other bundlers need their own flag handling.
 - The lint guard is passed by `{...props}` and by wrappers under names you did not list.
+- `--sensors` does not see a save after which the list was not reloaded: what a save changes is declared only by the invalidation call, and the missing call is the defect itself.
 - A recorded API does not test the backend: compare recordings with your API schema separately.
 
 ## License

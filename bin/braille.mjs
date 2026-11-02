@@ -81,13 +81,14 @@ function parseOptions(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     if (names[argv[i]]) options[names[argv[i]]] = argv[(i += 1)];
     else if (argv[i] === "--loose") options.loose = true;
+    else if (argv[i] === "--sensors") options.sensors = true;
     else if (argv[i] === "--strict") options.strict = true;
     else options.rest.push(argv[i]);
   }
   return options;
 }
 
-const executorFlags = (options) => [...(options.storageState ? ["--storage-state", options.storageState] : [])];
+const executorFlags = (options) => [...(options.storageState ? ["--storage-state", options.storageState] : []), ...(options.sensors ? ["--sensors"] : [])];
 
 function runOne(file, options) {
   const scenario = JSON.parse(fs.readFileSync(file, "utf8"));

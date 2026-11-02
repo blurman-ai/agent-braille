@@ -31,3 +31,22 @@ function endOf(animation: Animation): number {
   const end = animation.effect?.getComputedTiming().endTime;
   return typeof end === "number" ? end : Number.POSITIVE_INFINITY;
 }
+
+/** What the page's data layer knows about itself: requests and saves. A source hands over its snapshot as it is. */
+type DataSource = () => unknown;
+
+const dataSources = new Map<string, DataSource>();
+
+/**
+ * The request client declares what it knows: `queries` (key, status, error, observers - does a screen show it),
+ * `mutations` and `writes` (every non-GET call and its outcome). The executor compares them with what the screen says.
+ */
+export function registerDataSource(name: string, source: DataSource): void {
+  dataSources.set(name, source);
+}
+
+export function dataOf(): Record<string, unknown> {
+  const data: Record<string, unknown> = {};
+  for (const [name, source] of dataSources) data[name] = source();
+  return data;
+}

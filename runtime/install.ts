@@ -1,5 +1,5 @@
 // Managed by agent-braille: update with `braille install`.
-import { busyOf } from "./busy";
+import { busyOf, dataOf } from "./busy";
 import { startErrorsLog } from "./errorsLog";
 import { actOn, findInfos, layoutOf, screenInfoOf } from "./inspect";
 import { AGENT_TOOLS } from "./tools";
@@ -28,6 +28,7 @@ export function createAgentApi(win: Window & typeof globalThis): AgentApi & { di
     version: "agent-braille.v1",
     screen: () => screenInfoOf(doc),
     busy: () => busyOf(doc),
+    data: () => dataOf(),
     find: (query: ElementQuery) => findInfos(doc, query ?? {}),
     layout: (a, b) => layoutOf(doc, a, b),
     errors: options => log.read(options),
