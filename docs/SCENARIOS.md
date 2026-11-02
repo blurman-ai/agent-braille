@@ -63,6 +63,14 @@ Text values may use `{name}` substitutions from `--values` or a recording.
 - `"optional": true` for what appears only sometimes.
 - After every action the executor waits for `window.__agent.busy()` to be empty. No pauses needed.
 
+## Is the scenario a real check
+
+`braille mutate s.json --base URL --replay-api api/` breaks each recorded request in turn (a 500; lists come back empty). `NOT CAUGHT` means the scenario stays green without that request: either it does not matter to this path, or a check is missing. `--strict` fails on any.
+
+## When the screen does not say why
+
+Add a fact in the frontend where the code decides, then check it next to what is visible: `{"disabled": {"testid": "people.save"}}` and `{"fact": {"blocked-by": "name-longer-than-10"}}`. A fact explains a result; what is visible proves it.
+
 ## Forbidden
 
 - A testid, screen or state that was not in `observed`.

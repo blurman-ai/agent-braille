@@ -52,6 +52,9 @@ red "control: server refusal named" "name_rejected" $RUN $EX/scenarios/_control-
 started=$SECONDS
 red "control: a failed request ends the wait, named" "name_rejected" $RUN $EX/scenarios/_control-api-wait.json
 if [ $((SECONDS - started)) -lt 15 ]; then ok "control: the wait ended within 15 s"; else fail "control: the wait took $((SECONDS - started)) s"; fi
+started=$SECONDS
+red "control: a request failed a step earlier ends the wait, named" "name_rejected" $RUN $EX/scenarios/_control-api-earlier.json
+if [ $((SECONDS - started)) -lt 15 ]; then ok "control: that wait ended within 15 s"; else fail "control: that wait took $((SECONDS - started)) s"; fi
 red "control: browser missing is named" "the browser did not start" env BRAILLE_CHROME=/nonexistent $RUN $EX/scenarios/_control-label-required.json
 red "control: required label differs" "Current" $RUN $EX/scenarios/_control-label-required.json
 
@@ -64,6 +67,16 @@ green "replay from the recording" $RUN $EX/scenarios/people-add.json --replay-ap
 mkdir -p "$T/api-cut"
 node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync('$T/api/people-add.json'));d.calls=d.calls.filter(c=>c.method==='GET');fs.writeFileSync('$T/api-cut/people-add.json',JSON.stringify(d))"
 red "control: request missing from the recording" "POST /api/people" $RUN $EX/scenarios/people-add.json --replay-api "$T/api-cut"
+
+serve dist
+$BR mutate $EX/scenarios/people-add.json --base "$BASE" --replay-api "$T/api" --out "$T/mutate" > "$T/m" 2>&1
+if grep -q '^caught     500 POST /api/people' "$T/m"; then ok "mutate: a broken save is caught"; else fail "mutate: save"; cat "$T/m"; fi
+mkdir -p "$T/weak-dir"; python3 -c "
+import json;d=json.load(open('$EX/scenarios/people-add.json'));d['name']='weak';d['steps']=d['steps'][:1]+[{'wait':'People'}]
+json.dump(d,open('$T/weak.json','w'))
+r=json.load(open('$T/api/people-add.json'));r['scenario']='weak';json.dump(r,open('$T/weak-dir/weak.json','w'))"
+serve dist
+if $BR mutate "$T/weak.json" --base "$BASE" --replay-api "$T/weak-dir" --out "$T/mutate2" --strict > "$T/m2" 2>&1; then fail "mutate: a weak scenario passed strict"; cat "$T/m2"; elif grep -q 'NOT CAUGHT 500 POST /api/people' "$T/m2"; then ok "control: mutate reports a scenario that never saves"; else fail "control: mutate"; cat "$T/m2"; fi
 
 # A renamed label the requirement does not quote stays green.
 rm -f $EX/dist-renamed/assets/* 2>/dev/null
@@ -88,6 +101,10 @@ green "session: goto lifts it" $BR step '{"goto": "/"}'
 $BR step '{"goto": "/"}' >/dev/null; $BR step '{"click": {"testid": "people.add", "item": "Add person"}}' >/dev/null; $BR step '{"fill": {"label": "Name"}, "value": "boom"}' >/dev/null; $BR step '{"click": {"testid": "people.role"}}' >/dev/null; $BR step '{"click": {"role": "option", "name": "Designer"}}' >/dev/null
 $BR step '{"click": {"testid": "people.save"}}' > s2
 if grep -q '"notices"' s2 && grep -q 'Not saved' s2; then ok "session: an alert is in notices"; else fail "no notices"; cat s2; fi
+if grep -q '"contradictions"' s2 && grep -q 'POST /api/people 422' s2; then ok "session: ready with a failed request is a contradiction"; else fail "no contradiction"; cat s2; fi
+$BR step '{"goto": "/"}' >/dev/null; $BR step '{"click": {"testid": "people.add", "item": "Add person"}}' >/dev/null
+started=$SECONDS; $BR step '{"fill": "Role", "value": "Engineer"}' > s3
+if grep -q 'is a list' s3 && [ $((SECONDS - started)) -lt 5 ]; then ok "session: a list refuses typing at once"; else fail "a list"; cat s3; fi
 green "session: close" $BR close
 cd "$ROOT"
 echo; if [ "$FAILS" = 0 ]; then echo "ALL GREEN"; else echo "RED: $FAILS"; fi

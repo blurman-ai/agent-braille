@@ -21,6 +21,7 @@ import path from "node:path";
 import { fillValues } from "../lib/session.mjs";
 import { AFTER_KINDS, parseStep } from "../lib/steps.mjs";
 import { checkBuild, syncRuntime } from "../lib/install.mjs";
+import { faultsOf } from "../lib/api-records.mjs";
 
 const EXECUTOR = new URL("../lib/executor.mjs", import.meta.url).pathname;
 const REQUIRED_FIELDS = ["name", "why", "verifies", "steps"];
@@ -80,6 +81,7 @@ function parseOptions(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     if (names[argv[i]]) options[names[argv[i]]] = argv[(i += 1)];
     else if (argv[i] === "--loose") options.loose = true;
+    else if (argv[i] === "--strict") options.strict = true;
     else options.rest.push(argv[i]);
   }
   return options;
@@ -112,6 +114,30 @@ function runOne(file, options) {
   const result = spawnSync(process.execPath, args, { env: { ...process.env, BASE: options.base }, encoding: "utf8" });
   const failure = result.stdout.split("\n").find((line) => line.includes("FAILED"));
   return { name: scenario.name, code: result.status ?? 1, seconds: (Date.now() - started) / 1000, reason: failure ?? (result.status ? result.stderr.trim().split("\n")[0] : null), out };
+}
+
+/** Is the scenario a real check? Breaks each recorded request in turn; a scenario still green did not depend on it. */
+function mutate(options) {
+  const file = options.rest[0];
+  const scenario = JSON.parse(fs.readFileSync(file, "utf8"));
+  const doc = JSON.parse(fs.readFileSync(path.join(options.replayApi, `${scenario.name}.json`), "utf8"));
+  const quiet = { ...options, out: path.join(options.out ?? "tmp/braille/mutate", "baseline") };
+  const baseline = runOne(file, quiet);
+  if (baseline.code) {
+    console.log(`the scenario is red without any fault: ${baseline.reason}`);
+    return 2;
+  }
+  const missed = [];
+  const faults = faultsOf(doc);
+  for (const [index, fault] of faults.entries()) {
+    process.env.BRAILLE_FAULT = fault;
+    const result = runOne(file, { ...options, out: path.join(options.out ?? "tmp/braille/mutate", String(index)) });
+    delete process.env.BRAILLE_FAULT;
+    console.log(`${result.code ? "caught    " : "NOT CAUGHT"} ${fault}`);
+    if (!result.code) missed.push(fault);
+  }
+  console.log(`${faults.length - missed.length} of ${faults.length} faults caught`);
+  return options.strict && missed.length ? 1 : 0;
 }
 
 function run(options) {
@@ -234,6 +260,7 @@ async function main() {
     console.log(JSON.stringify(answer, null, 1));
     return answer.ok ? 0 : 1;
   }
+  if (command === "mutate" && options.base && options.replayApi && options.rest[0]) return mutate(options);
   if ((command === "run" || command === "start") && options.base) {
     if (command === "run") return run(options);
     const answer = await start(options);
