@@ -54,6 +54,12 @@ describe("role, name and ARIA state", () => {
     expect(nameOf(document.getElementById("c")!)).toBe("Create item");
   });
 
+  it("name: aria-hidden parts are left out, so a required field is named without its asterisk", () => {
+    document.body.innerHTML = `<label for="g">Group <span aria-hidden="true">*</span></label><input id="g"><span id="l">Role<i aria-hidden="true"> *</i></span><button id="r" aria-labelledby="l"></button>`;
+    expect(nameOf(document.getElementById("g")!)).toBe("Group");
+    expect(nameOf(document.getElementById("r")!)).toBe("Role");
+  });
+
   it("ARIA: disabled from the native attribute and aria-disabled, selected, expanded, busy, invalid", () => {
     document.body.innerHTML = `<button id="n" disabled></button><button id="a" aria-disabled="true"></button><button id="s" aria-selected="false" aria-expanded="true" aria-busy="true" aria-invalid="true"></button><button id="p"></button>`;
     expect(ariaStateOf(document.getElementById("n")!).disabled).toBe(true);
@@ -282,6 +288,14 @@ describe("actOn", () => {
     expect(actOn(document, "f", "clear")).toEqual({ ok: true });
     expect(field.value).toBe("");
     expect(onInput).toHaveBeenCalledTimes(2);
+  });
+
+  it("control case: type and clear on a read-only field are unsupported and keep the value", () => {
+    document.body.innerHTML = `<input data-testid="f" readonly value="Admin">`;
+    const field = document.querySelector("input")!;
+    expect(actOn(document, "f", "type", "Editor")).toEqual({ ok: false, error: "unsupported" });
+    expect(actOn(document, "f", "clear")).toEqual({ ok: false, error: "unsupported" });
+    expect(field.value).toBe("Admin");
   });
 
   it("select sets the value on a select and sends change", () => {
