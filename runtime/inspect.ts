@@ -66,6 +66,14 @@ export function visibleTextOf(el: Element): string {
   return squash(el.textContent);
 }
 
+/** Text without aria-hidden parts: the asterisk of a required field is not in its name. */
+function shownText(node: Node | null | undefined): string {
+  if (!node) return "";
+  if (node.nodeType === 3) return node.textContent ?? "";
+  if (node instanceof Element && node.getAttribute("aria-hidden") === "true") return "";
+  return Array.from(node.childNodes).map(shownText).join("");
+}
+
 /** Accessible name: aria-labelledby, aria-label, label, alt/title/placeholder, text. */
 export function nameOf(el: Element): string {
   const doc = el.ownerDocument;
@@ -73,7 +81,7 @@ export function nameOf(el: Element): string {
   if (labelledBy) {
     const joined = labelledBy
       .split(/\s+/)
-      .map(id => squash(doc.getElementById(id)?.textContent))
+      .map(id => squash(shownText(doc.getElementById(id))))
       .filter(Boolean)
       .join(" ");
     if (joined) return joined;
@@ -86,12 +94,12 @@ export function nameOf(el: Element): string {
     const label = Array.from(doc.querySelectorAll("label")).find(
       l => l.getAttribute("for") === id,
     );
-    const text = squash(label?.textContent);
+    const text = squash(shownText(label));
     if (text) return text;
   }
   const wrapping = el.closest("label");
   if (wrapping && wrapping !== el) {
-    const text = squash(wrapping.textContent);
+    const text = squash(shownText(wrapping));
     if (text) return text;
   }
   const alt = squash(el.getAttribute("alt"));
@@ -100,7 +108,7 @@ export function nameOf(el: Element): string {
   const tag = el.tagName.toLowerCase();
   const fromContent = tag === "input" || tag === "textarea" || tag === "select"
     ? ""
-    : visibleTextOf(el);
+    : squash(shownText(el));
   if (fromContent) return fromContent;
   return squash(el.getAttribute("title")) || squash(el.getAttribute("placeholder"));
 }
@@ -441,6 +449,8 @@ export function actOn(doc: Document, testid: string, action: ActAction, value?: 
     el instanceof HTMLTextAreaElement ||
     el instanceof HTMLSelectElement;
   if (!isField) return { ok: false, error: "unsupported" };
+  // A read-only field keeps its value: a list picker takes a choice through its options.
+  if (!(el instanceof HTMLSelectElement) && el.readOnly) return { ok: false, error: "unsupported" };
   if (action === "type" || action === "clear") {
     if (el instanceof HTMLSelectElement) return { ok: false, error: "unsupported" };
     el.focus();
