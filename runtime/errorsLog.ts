@@ -8,7 +8,7 @@ export type ErrorsLog = {
   dispose: () => void;
 };
 
-type TrackedXhr = XMLHttpRequest & { __agentReq?: { method: string; url: string } };
+type TrackedXhr = XMLHttpRequest & { __stalkerReq?: { method: string; url: string } };
 
 /**
  * Collects console errors, unhandled exceptions and failed API requests
@@ -78,12 +78,12 @@ export function startErrorsLog(win: Window & typeof globalThis): ErrorsLog {
     const originalOpen = xhrProto.open;
     const originalSend = xhrProto.send;
     xhrProto.open = function (this: TrackedXhr, method: string, url: string | URL, ...rest: unknown[]) {
-      this.__agentReq = { method: method.toUpperCase(), url: String(url) };
+      this.__stalkerReq = { method: method.toUpperCase(), url: String(url) };
       return (originalOpen as (...a: unknown[]) => void).call(this, method, url, ...rest);
     } as typeof xhrProto.open;
     xhrProto.send = function (this: TrackedXhr, body?: Document | XMLHttpRequestBodyInit | null) {
       this.addEventListener("loadend", () => {
-        const req = this.__agentReq;
+        const req = this.__stalkerReq;
         if (!req || (this.status > 0 && this.status < 400)) return;
         const text = this.responseType === "" || this.responseType === "text" ? this.responseText : "";
         const code = errorCodeOf(text || (this.responseType === "json" ? stringify(this.response) : ""));

@@ -5,10 +5,10 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 
 import { queryClient, router } from "./App";
-import { maybeInstallAgentApi } from "./shared/agent/bootstrap";
+import { maybeInstallStalker } from "./shared/stalker/bootstrap";
 
 // Installed before the first request so that early failures reach errors().
-maybeInstallAgentApi();
+maybeInstallStalker();
 createRoot(document.getElementById("root")!).render(
   <MantineProvider>
     <QueryClientProvider client={queryClient}>

@@ -10,7 +10,7 @@ Optional: `"onboarding": true` keeps tours and hints on.
 
 ## The loop
 
-1. `braille start --base http://localhost:5173` against a build with `VITE_AGENT_API=1`.
+1. `braille start --base http://localhost:5173` against a build with `VITE_STALKER=1`.
 2. First step: `braille step '{"goto": "/path"}'`.
 3. `ok: true`: the step is recorded and `observed` holds what is visible now. `ok: false`: not recorded, `error` says why. When an action happened and its `after` did not come true, only `goto` is accepted.
 4. Choose the next step **only from the last `observed`**. A testid that is not there does not exist.
@@ -61,7 +61,7 @@ Text values may use `{name}` substitutions from `--values` or a recording.
 - `item` is data (a row, an answer), not interface text.
 - **Each source answers its own question.** `state` and `busy` say the app has finished; only what is visible proves the result. A scenario needs at least one check of what is visible (`after.shown`, `after.gone`, a check step): `fact`, `state` and `requested` alone are refused.
 - `"optional": true` for what appears only sometimes.
-- After every action the executor waits for `window.__agent.busy()` to be empty. No pauses needed.
+- After every action the executor waits for `window.stalker.busy()` to be empty. No pauses needed.
 
 ## Is the scenario a real check
 

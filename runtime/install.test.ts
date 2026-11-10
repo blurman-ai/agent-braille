@@ -1,48 +1,54 @@
 // Managed by agent-braille: update with `braille install`.
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createAgentApi, installAgentApi } from "./install";
-import { AGENT_TOOLS } from "./tools";
+import { createStalker, installStalker } from "./install";
+import { STALKER_TOOLS } from "./tools";
 
 afterEach(() => {
+  delete window.stalker;
   delete window.__agent;
   vi.restoreAllMocks();
 });
 
-describe("window.__agent", () => {
-  it("installAgentApi installs six functions and the tool descriptions", () => {
-    installAgentApi(window);
-    const agent = window.__agent!;
+describe("window.stalker", () => {
+  it("installStalker installs six functions and the tool descriptions", () => {
+    installStalker(window);
+    const agent = window.stalker!;
     for (const name of ["screen", "busy", "find", "layout", "errors", "act"] as const) {
       expect(typeof agent[name]).toBe("function");
     }
-    expect(agent.tools).toBe(AGENT_TOOLS);
+    expect(agent.tools).toBe(STALKER_TOOLS);
   });
 
   it("every function is described by a tool: name, description, input schema", () => {
-    installAgentApi(window);
-    const names = AGENT_TOOLS.map(t => t.name).sort();
+    installStalker(window);
+    const names = STALKER_TOOLS.map(t => t.name).sort();
     expect(names).toEqual(["act", "busy", "errors", "find", "layout", "screen"]);
-    for (const tool of AGENT_TOOLS) {
+    for (const tool of STALKER_TOOLS) {
       expect(tool.description.length).toBeGreaterThan(10);
       expect(tool.inputSchema).toMatchObject({ type: "object" });
-      expect(typeof window.__agent![tool.name]).toBe("function");
+      expect(typeof window.stalker![tool.name]).toBe("function");
     }
   });
 
+  it("the name before v2, window.__agent, points to the same object", () => {
+    installStalker(window);
+    expect(window.__agent).toBe(window.stalker);
+  });
+
   it("a repeated install does not replace the object", () => {
-    installAgentApi(window);
-    const first = window.__agent;
-    installAgentApi(window);
-    expect(window.__agent).toBe(first);
+    installStalker(window);
+    const first = window.stalker;
+    installStalker(window);
+    expect(window.stalker).toBe(first);
   });
 
   it("registers tools in navigator.modelContext when it exists", async () => {
     const registerTool = vi.fn();
     Object.defineProperty(window.navigator, "modelContext", { value: { registerTool }, configurable: true });
     try {
-      installAgentApi(window);
-      expect(registerTool).toHaveBeenCalledTimes(AGENT_TOOLS.length);
+      installStalker(window);
+      expect(registerTool).toHaveBeenCalledTimes(STALKER_TOOLS.length);
       const screenTool = registerTool.mock.calls.find(c => c[0].name === "screen")![0];
       const out = await screenTool.execute({});
       expect(out.content[0].type).toBe("text");
@@ -58,7 +64,7 @@ describe("errors()", () => {
     console.error = () => {};
     const realFetch = window.fetch;
     window.fetch = vi.fn(async () => new Response("no", { status: 500 })) as typeof fetch;
-    const api = createAgentApi(window);
+    const api = createStalker(window);
     try {
       console.error("boom", { a: 1 });
       await window.fetch("/api/v1/x", { method: "POST" });
@@ -81,7 +87,7 @@ describe("errors()", () => {
       async () =>
         new Response(JSON.stringify({ detail: { code: "replay_miss" } }), { status: 502 }),
     ) as typeof fetch;
-    const api = createAgentApi(window);
+    const api = createStalker(window);
     try {
       await window.fetch("/api/items/extract", { method: "POST" });
       expect(api.errors()[0]).toMatchObject({ status: 502, code: "replay_miss" });
@@ -95,7 +101,7 @@ describe("errors()", () => {
   it("a successful request is not listed; an error survives navigation and names its page", async () => {
     const realFetch = window.fetch;
     window.fetch = vi.fn(async () => new Response("ok", { status: 200 })) as typeof fetch;
-    const api = createAgentApi(window);
+    const api = createStalker(window);
     try {
       await window.fetch("/api/ok");
       expect(api.errors()).toEqual([]);
