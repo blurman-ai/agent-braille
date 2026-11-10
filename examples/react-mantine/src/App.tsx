@@ -5,8 +5,8 @@ import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, createBrowserRouter } from "react-router-dom";
 
-import { registerBusySource, registerDataSource } from "./shared/agent/busy";
-import { queryScreenState, screenFactProps, screenRootProps } from "./shared/agent/screenState";
+import { registerBusySource, registerDataSource } from "./shared/stalker/busy";
+import { queryScreenState, screenFactProps, screenRootProps } from "./shared/stalker/screenState";
 
 export const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 

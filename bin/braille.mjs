@@ -7,9 +7,9 @@
  *       [--out DIR] [--record-api DIR | --replay-api DIR] [--storage-state FILE] [--values FILE]
  *   braille start --base URL [--storage-state FILE] [--values FILE]   open a step session in the background
  *   braille step '<step JSON>' | look | close  drive the session one step at a time
- *   braille install <frontend>                copy the runtime into <frontend>/src/shared/agent
+ *   braille install <frontend>                copy the runtime into <frontend>/src/shared/stalker
  *   braille check-runtime <frontend>          fail if the application's copy drifted
- *   braille check-build <dist> enabled|disabled   prove the agent API is in or out of a build
+ *   braille check-build <dist> enabled|disabled   prove window.stalker is in or out of a build
  *   braille selftest                          control cases, no network
  *
  * Scenario format and rules for the model: docs/SCENARIOS.md.

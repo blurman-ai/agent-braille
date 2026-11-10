@@ -2,12 +2,14 @@
 import { busyOf, dataOf } from "./busy";
 import { startErrorsLog } from "./errorsLog";
 import { actOn, findInfos, layoutOf, screenInfoOf } from "./inspect";
-import { AGENT_TOOLS } from "./tools";
-import type { ActAction, AgentApi, AgentToolDescriptor, ElementQuery } from "./types";
+import { STALKER_TOOLS } from "./tools";
+import type { ActAction, StalkerApi, StalkerToolDescriptor, ElementQuery } from "./types";
 
 declare global {
   interface Window {
-    __agent?: AgentApi;
+    stalker?: StalkerApi;
+    /** The name before v2; points to the same object until consumers move to `window.stalker`. */
+    __agent?: StalkerApi;
   }
 }
 
@@ -21,11 +23,11 @@ type ModelContext = {
 };
 
 /** Builds the object without touching `window`: this is how tests check it. */
-export function createAgentApi(win: Window & typeof globalThis): AgentApi & { dispose: () => void } {
+export function createStalker(win: Window & typeof globalThis): StalkerApi & { dispose: () => void } {
   const doc = win.document;
   const log = startErrorsLog(win);
   return {
-    version: "agent-braille.v1",
+    version: "agent-braille.v2",
     screen: () => screenInfoOf(doc),
     busy: () => busyOf(doc),
     data: () => dataOf(),
@@ -33,12 +35,12 @@ export function createAgentApi(win: Window & typeof globalThis): AgentApi & { di
     layout: (a, b) => layoutOf(doc, a, b),
     errors: options => log.read(options),
     act: (testid: string, action: ActAction, value?: string) => actOn(doc, testid, action, value),
-    tools: AGENT_TOOLS,
+    tools: STALKER_TOOLS,
     dispose: log.dispose,
   };
 }
 
-function callTool(api: AgentApi, name: AgentToolDescriptor["name"], input: Record<string, unknown>): unknown {
+function callTool(api: StalkerApi, name: StalkerToolDescriptor["name"], input: Record<string, unknown>): unknown {
   switch (name) {
     case "screen":
       return api.screen();
@@ -55,17 +57,18 @@ function callTool(api: AgentApi, name: AgentToolDescriptor["name"], input: Recor
   }
 }
 
-/** Installs `window.__agent`. Called only from `bootstrap.ts` when `VITE_AGENT_API=1`. */
-export function installAgentApi(win: Window & typeof globalThis = window): void {
-  if (win.__agent) return;
-  const { dispose, ...api } = createAgentApi(win);
+/** Installs `window.stalker`. Called only from `bootstrap.ts` when `VITE_STALKER=1`. */
+export function installStalker(win: Window & typeof globalThis = window): void {
+  if (win.stalker) return;
+  const { dispose, ...api } = createStalker(win);
   void dispose;
+  win.stalker = api;
   win.__agent = api;
 
   // When the browser provides navigator.modelContext (WebMCP draft), the same
   // functions are registered as page tools.
   const modelContext = (win.navigator as Navigator & { modelContext?: ModelContext }).modelContext;
-  for (const tool of modelContext?.registerTool ? AGENT_TOOLS : []) {
+  for (const tool of modelContext?.registerTool ? STALKER_TOOLS : []) {
     modelContext?.registerTool?.({
       ...tool,
       execute: async input => ({

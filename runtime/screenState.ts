@@ -1,7 +1,7 @@
 // Managed by agent-braille: update with `braille install`.
 /**
  * Screen readiness for agents and scenarios. Values are declared once: a screen root takes them through
- * `screenRootProps`, `window.__agent` and the executor read the same values from the DOM. Derive the state
+ * `screenRootProps`, `window.stalker` and the executor read the same values from the DOM. Derive the state
  * from the request or state the screen already has, never from a timer.
  */
 export const SCREEN_STATES = ["loading", "ready", "empty", "error"] as const;
@@ -20,7 +20,7 @@ export function screenRootProps(name: string, state: ScreenState) {
 export const SCREEN_FACT_ATTR = "data-fact";
 export const SCREEN_FACT_VALUE_ATTR = "data-fact-value";
 
-/** A fact the elements do not show: a mode, a step number. Read by `window.__agent.screen().facts`. */
+/** A fact the elements do not show: a mode, a step number. Read by `window.stalker.screen().facts`. */
 export function screenFactProps(name: string, value: string | number): Record<string, string> {
   return { [SCREEN_FACT_ATTR]: name, [SCREEN_FACT_VALUE_ATTR]: String(value) };
 }

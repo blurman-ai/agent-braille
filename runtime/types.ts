@@ -104,7 +104,7 @@ export type ActResult =
       occludedBy?: Occluder[];
     };
 
-export type AgentApi = {
+export type StalkerApi = {
   version: string;
   screen: () => ScreenInfo | null;
   /** Unfinished items of the page per source; an empty object means at rest. */
@@ -115,12 +115,12 @@ export type AgentApi = {
   layout: (a: string, b: string) => LayoutInfo | null;
   errors: (options?: { clear?: boolean }) => CapturedError[];
   act: (testid: string, action: ActAction, value?: string) => ActResult;
-  tools: ReadonlyArray<AgentToolDescriptor>;
+  tools: ReadonlyArray<StalkerToolDescriptor>;
 };
 
 /** A tool in the form of the W3C WebMCP draft. */
-export type AgentToolDescriptor = {
-  name: keyof Omit<AgentApi, "tools" | "data">;
+export type StalkerToolDescriptor = {
+  name: keyof Omit<StalkerApi, "tools" | "data">;
   description: string;
   inputSchema: Record<string, unknown>;
 };

@@ -29,13 +29,18 @@ red "control: bad scenario refused" "needs after" $BR run "$T/x.json" --base "$B
 
 [ -d $EX/node_modules ] || (cd $EX && npm install --no-audit --no-fund --silent)
 green "install runtime" $BR install $EX
-rm -f $EX/src/shared/agent/*.test.ts
-echo "// drift" >> $EX/src/shared/agent/busy.ts
+rm -f $EX/src/shared/stalker/*.test.ts
+echo "// drift" >> $EX/src/shared/stalker/busy.ts
 red "control: drifted copy reported" "differs" $BR check-runtime $EX
 green "install restores it" $BR install $EX
-rm -f $EX/src/shared/agent/*.test.ts
-(cd $EX && VITE_AGENT_API=1 npx vite build --outDir dist --emptyOutDir --logLevel error) >/dev/null 2>&1
-(cd $EX && VITE_AGENT_API=0 npx vite build --outDir dist-off --emptyOutDir --logLevel error) >/dev/null 2>&1
+rm -f $EX/src/shared/stalker/*.test.ts
+mkdir -p $EX/src/shared/agent && cp $EX/src/shared/stalker/busy.ts $EX/src/shared/agent/busy.ts
+red "control: copy from before window.stalker reported" "old copy" $BR check-runtime $EX
+green "install removes the old copy" $BR install $EX
+[ ! -e $EX/src/shared/agent ] || fail "install left src/shared/agent"
+rm -f $EX/src/shared/stalker/*.test.ts
+(cd $EX && VITE_STALKER=1 npx vite build --outDir dist --emptyOutDir --logLevel error) >/dev/null 2>&1
+(cd $EX && VITE_STALKER=0 npx vite build --outDir dist-off --emptyOutDir --logLevel error) >/dev/null 2>&1
 green "flag on: API in the build" $BR check-build $EX/dist enabled
 green "flag off: API not in the build" $BR check-build $EX/dist-off disabled
 red "control: flag off, expected on" "absent" $BR check-build $EX/dist-off enabled

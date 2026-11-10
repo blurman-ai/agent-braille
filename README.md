@@ -46,7 +46,7 @@ It has four parts:
 
 | Part | What it does | Where |
 |---|---|---|
-| In-page API | `window.__agent`: `screen`, `busy`, `find`, `act`, `layout`, `errors`, `tools`. Exists only in a build with `VITE_AGENT_API=1` | `runtime/` |
+| In-page API | `window.stalker`: `screen`, `busy`, `find`, `act`, `layout`, `errors`, `tools`. Exists only in a build with `VITE_STALKER=1` | `runtime/` |
 | Markup contract | screen root `data-testid="screen.<name>"` with `data-state` (`loading`, `ready`, `empty`, `error`); buttons `data-testid="<screen>.<action>"`; hidden state `data-fact` | `runtime/screenState.ts` |
 | Markup guard | a lint rule refuses an action button without a testid; a test checks names | `frontend/` |
 | Executor | runs scenarios, or one step at a time for a model; records API answers and replays a screen with no backend | `bin/braille.mjs`, `lib/` |
@@ -69,13 +69,13 @@ bash test.sh
 
 Written for the agent doing the work. Each step ends with a check; if it fails, fix that step before going on.
 
-1. **Install the runtime.** `node <braille>/bin/braille.mjs install <frontend>` copies it to `<frontend>/src/shared/agent/`. `check-runtime <frontend>` later reports drift.
+1. **Install the runtime.** `node <braille>/bin/braille.mjs install <frontend>` copies it to `<frontend>/src/shared/stalker/`. `check-runtime <frontend>` later reports drift. Before v2 the bridge was `window.__agent`, the flag `VITE_AGENT_API` and the copy `src/shared/agent/`: `install` removes the old copy, the import and the flag in your build scripts you change yourself. `window.__agent` still points to `window.stalker` for players that have not moved yet.
 2. **Load it at the entry point, before the first request:**
    ```ts
-   import { maybeInstallAgentApi } from "./shared/agent/bootstrap";
-   maybeInstallAgentApi();
+   import { maybeInstallStalker } from "./shared/stalker/bootstrap";
+   maybeInstallStalker();
    ```
-3. **Prove both builds.** Build with `VITE_AGENT_API=1`, run `braille check-build <dist> enabled`. Build without it, run `braille check-build <dist> disabled`. Production is always built without the flag. Plain esbuild keeps the module even with the flag off: on any bundler other than Vite this check decides, and the import has to be replaced with an empty module.
+3. **Prove both builds.** Build with `VITE_STALKER=1`, run `braille check-build <dist> enabled`. Build without it, run `braille check-build <dist> disabled`. Production is always built without the flag. Plain esbuild keeps the module even with the flag off: on any bundler other than Vite this check decides, and the import has to be replaced with an empty module.
 4. **Declare what the page is busy with,** so the executor never sleeps. For React Query and React Router:
    ```ts
    registerBusySource("queries", () => queryClient.getQueryCache().findAll({ fetchStatus: "fetching", predicate: (q) => q.state.data === undefined }).length);
@@ -95,7 +95,7 @@ Written for the agent doing the work. Each step ends with a check; if it fails, 
 7. **Turn on the guard.** Copy `frontend/testidScope.js` and `eslint-testid-block.js`, list your button components in `testidBlock([...])`. Copy `frontend/testids.test.js`; its control cases must fail on a button without a testid. Add directories as you mark them up.
 8. **Switch off tours and hints.** They call `agentTurnedOff("onboarding")` from `runtime/switches.ts`; the executor sets that key itself, so they do not pop up over steps.
 9. **Write the first scenario step by step** as in [docs/SCENARIOS.md](docs/SCENARIOS.md), record the API, replay it with the backend stopped. Break one expectation and confirm that it goes red with a clear reason.
-10. **Tell your agents.** Add to `AGENTS.md`: read screens through `window.__agent` and `braille step` (`braille help` is the short manual), write scenarios by `docs/SCENARIOS.md`, use a screenshot only for questions about appearance.
+10. **Tell your agents.** Add to `AGENTS.md`: read screens through `window.stalker` and `braille step` (`braille help` is the short manual), write scenarios by `docs/SCENARIOS.md`, use a screenshot only for questions about appearance.
 
 Done when every page has a root with `data-state`, lint covers every screen with buttons, and each screen with meaningful behaviour has a green scenario plus a control that can go red.
 

@@ -9,7 +9,7 @@ export type AgentSwitch = "onboarding";
 export const AGENT_OFF_KEY = "agent.off";
 
 export function agentTurnedOff(name: AgentSwitch): boolean {
-  if (import.meta.env.VITE_AGENT_API !== "1") return false;
+  if (import.meta.env.VITE_STALKER !== "1") return false;
   try {
     return (window.localStorage.getItem(AGENT_OFF_KEY) ?? "").split(",").includes(name);
   } catch {

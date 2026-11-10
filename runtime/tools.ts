@@ -1,5 +1,5 @@
 // Managed by agent-braille: update with `braille install`.
-import type { AgentToolDescriptor } from "./types";
+import type { StalkerToolDescriptor } from "./types";
 
 const queryProperties = {
   testid: { type: "string", description: "Exact data-testid; `prefix*` matches by the start." },
@@ -9,11 +9,11 @@ const queryProperties = {
 };
 
 /**
- * Description of the `window.__agent` functions in the form of W3C WebMCP draft
+ * Description of the `window.stalker` functions in the form of W3C WebMCP draft
  * tools (name, description, input schema). The name matches the function key in
  * the object.
  */
-export const AGENT_TOOLS: ReadonlyArray<AgentToolDescriptor> = [
+export const STALKER_TOOLS: ReadonlyArray<StalkerToolDescriptor> = [
   {
     name: "screen",
     description:
